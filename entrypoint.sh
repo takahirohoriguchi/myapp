@@ -1,8 +1,21 @@
-#!/bin/bash
-set -e
+FROM ruby:3.1
 
-# Remove a potentially pre-existing server.pid for Rails.
-rm -f /backend/tmp/pids/server.pid
+ENV LANG=C.UTF-8 \
+  TZ=Asia/Tokyo
 
-# Then exec the container's main process (what's set as CMD in the Dockerfile).
-exec "$@"
+# rails用のディレクトリを作成
+RUN mkdir /backend
+WORKDIR /backend
+
+RUN apt-get update -qq && apt-get install -y nodejs default-mysql-client && apt-get install -y vim
+COPY Gemfile Gemfile.lock ./
+RUN bundle install
+
+COPY entrypoint.sh /usr/bin/
+RUN chmod +x /usr/bin/entrypoint.sh
+
+# COPY my.cnf /etc/mysql/
+ENTRYPOINT ["entrypoint.sh"]
+EXPOSE 3000
+
+CMD ["rails", "server", "-b", "0.0.0.0"]
